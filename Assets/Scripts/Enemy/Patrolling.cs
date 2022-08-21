@@ -1,59 +1,66 @@
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 [RequireComponent(typeof(EnemyAnimator))]
 public class Patrolling : MonoBehaviour
 {
-    [SerializeField] Transform[] _patrolPoints;
-    [SerializeField] float _walkingSpeed = 2;
-    [SerializeField] float _haltDuration = 2;
+    [SerializeField] private float _walkingSpeed = 2;
+    [SerializeField] private float _haltDuration = 2;
+    [SerializeField] private Transform[] _patrolPoints;
 
     private const float DeltaPointDistance = 0.1f;
     private EnemyAnimator _enemyAnimator;
+    private bool _isPatrolInProgress;
+    private bool _needStopPatrol;
 
     public bool CanPatrol => _patrolPoints.Length > 0;
-    public bool IsPatrol { get; private set; }
+    public bool IsPatrol => _isPatrolInProgress;
 
     private void OnEnable()
     {
         _enemyAnimator = GetComponent<EnemyAnimator>();
     }
 
-    public void StartPatrol()
+    public bool TryStartPatrol()
     {
-        if (CanPatrol)
+        bool canStartPatrol = CanPatrol && (_isPatrolInProgress == false);
+
+        if (canStartPatrol)
+        {
+            _needStopPatrol = false;
             StartCoroutine(Patrol());
+        }
+        return canStartPatrol;
     }
 
     public void StopPatrol()
     {
-        IsPatrol = false;
+        _needStopPatrol = true;
     }
 
     private IEnumerator Patrol()
     {
-        IsPatrol = true;
+        _isPatrolInProgress = true;
         var waitForSeconds = new WaitForSeconds(_haltDuration);
 
         while (gameObject.activeSelf)
         {
             foreach (var point in _patrolPoints)
             {
-                bool negativeDirection = transform.position.x - point.position.x > 0;
-
-                while (Mathf.Abs(transform.position.x - point.position.x) > DeltaPointDistance)
+                while (IsPointReached(point) == false)
                 {
-                    if (IsPatrol)
+                    if (_needStopPatrol)
                     {
-                        _enemyAnimator.PlayWalk();
-                        MoveAlongXAxis(negativeDirection);
-                        yield return null;
-                    }
-                    else
-                    {
+                        _isPatrolInProgress = false;
                         yield break;
                     }
+                    TakeStepToPoint(point);
+                    yield return null;
+                }
+                if (_needStopPatrol)
+                {
+                    _isPatrolInProgress = false;
+                    yield break;
                 }
                 _enemyAnimator.PlayIdle();
                 yield return waitForSeconds;
@@ -61,21 +68,15 @@ public class Patrolling : MonoBehaviour
         }
     }
 
-    private void MoveAlongXAxis(bool negativeDirection = false)
+    private bool IsPointReached(Transform point)
     {
-        LookInXDirection(negativeDirection);
-        float _xShift = _walkingSpeed * Time.deltaTime * (negativeDirection ? -1 : 1);
-        transform.Translate(_xShift, 0, 0);
+        return Mathf.Abs(transform.position.x - point.position.x) < DeltaPointDistance;
     }
 
-    private void LookInXDirection(bool negativeDirection)
+    private void TakeStepToPoint(Transform point)
     {
-        int direction = negativeDirection ? -1 : 1;
-
-        if (transform.localScale.x * direction > 0)
-            return;
-
-        transform.localScale = new Vector3(-1 * transform.localScale.x, transform.localScale.y, transform.localScale.z);
+        _enemyAnimator.PlayWalk();
+        transform.MoveAlongXAxis(point.transform, _walkingSpeed * Time.deltaTime);
     }
 
     private void OnValidate()

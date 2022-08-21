@@ -1,34 +1,34 @@
 using UnityEngine;
-using UnityEngine.Events;
 
 [RequireComponent(typeof(Collider2D))]
 public class GroundChecker : MonoBehaviour
 {
-    [SerializeField] LayerMask _layerMask;
-    [SerializeField] UnityEvent _landed;
+    [SerializeField] LayerMask _groundLayer;
+
+    private Collider2D _collider;
 
     public bool IsOnGround { get; private set; }
 
     private void Start()
     {
-        GetComponent<Collider2D>().isTrigger = true;
+        _collider = GetComponent<Collider2D>();
+
+        if (_collider.isTrigger == false)
+            throw new System.Exception("Collider should be trigger.");
     }
 
     private void OnTriggerEnter2D(Collider2D collision)
     {
-        if ((_layerMask & (1 << collision.gameObject.layer)) > 0)
-        {
+        if ((_groundLayer & (1 << collision.gameObject.layer)) > 0)
             IsOnGround = true;
-            _landed.Invoke();
-        }
     }
 
     private void OnTriggerExit2D(Collider2D collision)
     {
-        if (gameObject.GetComponent<BoxCollider2D>().IsTouchingLayers(_layerMask))
+        if (_collider.IsTouchingLayers(_groundLayer))
             return;
 
-        if ((_layerMask & (1 << collision.gameObject.layer)) > 0)
+        if ((_groundLayer & (1 << collision.gameObject.layer)) > 0)
             IsOnGround = false;
     }
 }

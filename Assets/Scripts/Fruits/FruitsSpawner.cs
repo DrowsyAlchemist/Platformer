@@ -1,31 +1,33 @@
-
 using System.Collections;
 using UnityEngine;
-using System.Linq;
 
 public class FruitsSpawner : MonoBehaviour
 {
-    [SerializeField] private Fruit _fruit;
+    [SerializeField] private Fruit _template;
     [SerializeField] private uint _fruitsCount;
-    [SerializeField] private float _spawnDelayInSeconds;
+    [SerializeField] private float _spawnDelayInSeconds = 1;
     [SerializeField] private bool _isRandomOrder;
 
     private Transform[] _swawnPoints;
 
     private void Start()
     {
-        if (gameObject.transform.childCount < 1)
+        InitializeSpawnPoints();
+        StartCoroutine(Spawn());
+    }
+
+    private void InitializeSpawnPoints()
+    {
+        if (transform.childCount < 1)
             throw new System.Exception("There are no spawn points.");
 
-        _swawnPoints = new Transform[gameObject.transform.childCount];
+        _swawnPoints = new Transform[transform.childCount];
 
         for (int i = 0; i < _swawnPoints.Length; i++)
-            _swawnPoints[i] = gameObject.transform.GetChild(i).transform;
+            _swawnPoints[i] = transform.GetChild(i);
 
         if (_isRandomOrder)
             Shuffle(_swawnPoints);
-
-        StartCoroutine(Spawn());
     }
 
     private IEnumerator Spawn()
@@ -34,7 +36,7 @@ public class FruitsSpawner : MonoBehaviour
 
         for (int i = 0; i < _fruitsCount; i++)
         {
-            Instantiate(_fruit, _swawnPoints[i].transform.position, Quaternion.identity);
+            Instantiate(_template, _swawnPoints[i].transform.position, Quaternion.identity);
             yield return waitForSeconds;
         }
     }
@@ -52,7 +54,7 @@ public class FruitsSpawner : MonoBehaviour
 
     private void OnValidate()
     {
-        if (_fruitsCount > gameObject.transform.childCount)
-            _fruitsCount = (uint)gameObject.transform.childCount;
+        if (_fruitsCount > transform.childCount)
+            _fruitsCount = (uint)transform.childCount;
     }
 }

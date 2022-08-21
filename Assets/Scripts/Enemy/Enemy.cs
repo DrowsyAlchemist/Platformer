@@ -1,27 +1,19 @@
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
 
 [RequireComponent(typeof(EnemyAnimator))]
 [RequireComponent(typeof(Patrolling))]
-public class Enemy : MonoBehaviour
+public class Enemy : MonoBehaviour, IRestartable
 {
-    [SerializeField] protected float _recoveryTime = 2;
-    [SerializeField] private UnityEvent _isWin;
+    [SerializeField] private float _recoveryTime = 2;
 
     protected EnemyAnimator EnemyAnimator;
     private const float DestroyDelay = 1f;
-    private const float RestartDelay = 2f;
-    private const float WinDelay = 0.7f;
+    private GameFinishTrigger _gameFinishTrigger;
     private Vector3 _initialPosition;
     private Patrolling _patrolling;
-
-    public event UnityAction IsWin
-    {
-        add => _isWin.AddListener(value);
-        remove => _isWin.RemoveListener(value);
-    }
+    private bool _isWin;
 
     public bool IsDizzy { get; private set; }
 
@@ -29,37 +21,33 @@ public class Enemy : MonoBehaviour
     {
         EnemyAnimator = GetComponent<EnemyAnimator>();
         _patrolling = GetComponent<Patrolling>();
-    }
-
-    private void Start()
-    {
-        if (_patrolling.CanPatrol)
-            _patrolling.StartPatrol();
-
         _initialPosition = transform.position;
+
+        _gameFinishTrigger = FindObjectOfType<GameFinishTrigger>();
+        _gameFinishTrigger.PlayerWin += OnPlayerWin;
+        _gameFinishTrigger.PlayerLost += OnEnemiesWin;
+
+        _patrolling.TryStartPatrol();
     }
 
-    public void OnEnemiesWin()
+    public void Restart()
+    {
+        _isWin = false;
+        transform.position = _initialPosition;
+        EnemyAnimator.PlayIdle();
+        _patrolling.TryStartPatrol();
+    }
+
+    private void OnEnemiesWin()
     {
         _patrolling.StopPatrol();
         EnemyAnimator.PlayWin();
-        StartCoroutine(Restart());
     }
 
-    public void OnPlayerWin()
+    private void OnPlayerWin()
     {
         _patrolling.StopPatrol();
         StartCoroutine(DieAndDestroy());
-    }
-
-    private IEnumerator Restart()
-    {
-        yield return new WaitForSeconds(RestartDelay);
-        transform.position = _initialPosition;
-        EnemyAnimator.PlayIdle();
-
-        if (_patrolling.CanPatrol)
-            _patrolling.StartPatrol();
     }
 
     private IEnumerator DieAndDestroy()
@@ -69,9 +57,14 @@ public class Enemy : MonoBehaviour
         Destroy(gameObject);
     }
 
+    private void OnDestroy()
+    {
+        _gameFinishTrigger.PlayerWin -= OnPlayerWin;
+        _gameFinishTrigger.PlayerLost -= OnEnemiesWin;
+    }
+
     private void OnCollisionEnter2D(Collision2D collision)
     {
-        Debug.Log("Collision");
         ReactToPlayerCollision(collision.collider, AttackPlayer);
     }
 
@@ -83,41 +76,30 @@ public class Enemy : MonoBehaviour
     private void ReactToPlayerCollision(Collider2D playerCollider, UnityAction action)
     {
         if (playerCollider.gameObject.TryGetComponent(out Player _))
-            if (IsDizzy == false)
+            if (_isWin == false && IsDizzy == false)
                 action();
     }
 
     private void AttackPlayer()
     {
-        Debug.Log("AttackPlayer");
         _patrolling.StopPatrol();
         EnemyAnimator.PlayAttack();
-        StartCoroutine(InvokeWinEvent());
-    }
-
-    private IEnumerator InvokeWinEvent()
-    {
-        yield return new WaitForSeconds(WinDelay);
-        _isWin.Invoke();
+        _isWin = true;
     }
 
     private void StartDizzy()
     {
         _patrolling.StopPatrol();
         IsDizzy = true;
+        EnemyAnimator.PlayDizzy();
         StartCoroutine(Recover());
     }
 
     private IEnumerator Recover()
     {
-        EnemyAnimator.PlayDizzy();
-        Debug.Log("Recovering...");
-        var waitForSeconds = new WaitForSeconds(_recoveryTime);
-        yield return waitForSeconds;
+        yield return new WaitForSeconds(_recoveryTime);
         IsDizzy = false;
-        Debug.Log("Recovered!");
-
-        if (_patrolling.CanPatrol)
-            _patrolling.StartPatrol();
+        EnemyAnimator.PlayIdle();
+        _patrolling.TryStartPatrol();
     }
 }

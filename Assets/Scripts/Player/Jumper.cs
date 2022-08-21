@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 [RequireComponent(typeof(Rigidbody2D))]
@@ -17,6 +15,7 @@ public class Jumper : MonoBehaviour
 
     public void Jump()
     {
-        _rigidbody.velocity = new Vector2(_rigidbody.velocity.x, _jumpForñe * JumpForñeScale);
+        Vector2 force = _jumpForñe * JumpForñeScale * Vector2.up;
+        _rigidbody.AddForce(force, ForceMode2D.Impulse);
     }
 }

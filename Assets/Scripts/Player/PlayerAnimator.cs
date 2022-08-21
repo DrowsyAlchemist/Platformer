@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 [RequireComponent(typeof(Animator))]
@@ -7,7 +5,7 @@ public class PlayerAnimator : MonoBehaviour
 {
     private const string RunAnimation = "IsRunning";
     private const string JumpAnimation = "IsJumping";
-    private const string DieAnimation = "Die";
+    private const string DieAnimation = "IsDead";
     private Animator _animator;
 
     private void OnEnable()
@@ -15,27 +13,33 @@ public class PlayerAnimator : MonoBehaviour
         _animator = GetComponent<Animator>();
     }
 
-    public void StartRunAnimation()
+    public void PlayIdle()
     {
+        ResetAnimations();
+    }
+
+    public void PlayRun()
+    {
+        ResetAnimations();
         _animator.SetBool(RunAnimation, true);
     }
 
-    public void StopRunAnimation()
+    public void PlayJump()
     {
-        _animator.SetBool(RunAnimation, false);
-    }
-
-    public void StartJumpAnimation()
-    {
+        ResetAnimations();
         _animator.SetBool(JumpAnimation, true);
     }
-    public void StopJumpAnimation()
+
+    public void PlayDie()
     {
-        _animator.SetBool(JumpAnimation, false);
+        ResetAnimations();
+        _animator.SetBool(DieAnimation, true);
     }
 
-    public void PlayDieAnimation()
+    private void ResetAnimations()
     {
-        _animator.SetTrigger(DieAnimation);
+        _animator.SetBool(RunAnimation, false);
+        _animator.SetBool(JumpAnimation, false);
+        _animator.SetBool(DieAnimation, false);
     }
 }

@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -5,8 +6,8 @@ public class GameFinishTrigger : MonoBehaviour
 {
     [SerializeField] private UnityEvent _playerWin;
     [SerializeField] private UnityEvent _playerLost;
-
-    private Enemy[] _enemies;
+    [SerializeField] private float _playerLostDelay = 1;
+    [SerializeField] private float _restartDelay = 4;
 
     public event UnityAction PlayerWin
     {
@@ -22,16 +23,7 @@ public class GameFinishTrigger : MonoBehaviour
 
     private void OnEnable()
     {
-        _enemies = FindObjectsOfType<Enemy>();
-
-        if (_enemies.Length == 0)
-            throw new System.Exception("There are no enemies.");
-
-        foreach (var enemy in _enemies)
-        {
-            enemy.IsWin += OnEnemyWin;
-            PlayerWin += enemy.OnPlayerWin;
-        }
+        FindObjectOfType<Player>().Died += OnPlayerDied;
     }
 
     private void OnTriggerEnter2D(Collider2D collision)
@@ -40,8 +32,37 @@ public class GameFinishTrigger : MonoBehaviour
             _playerWin.Invoke();
     }
 
-    private void OnEnemyWin()
+    private void OnPlayerDied()
     {
+        StartCoroutine(InvokePlayerLost());
+        StartCoroutine(Restart());
+    }
+
+    private IEnumerator InvokePlayerLost()
+    {
+        yield return new WaitForSeconds(_playerLostDelay);
         _playerLost.Invoke();
+    }
+
+    private IEnumerator Restart()
+    {
+        yield return new WaitForSeconds(_restartDelay);
+        var gameObjects = FindObjectsOfType<GameObject>();
+
+        foreach (var gameObject in gameObjects)
+            if (gameObject.TryGetComponent(out IRestartable restartable))
+                restartable.Restart();
+    }
+
+    private void OnValidate()
+    {
+        if (_playerLostDelay < 0)
+            _playerLostDelay *= -1;
+
+        if (_restartDelay < 0)
+            _restartDelay *= -1;
+
+        if (_playerLostDelay > _restartDelay)
+            _playerLostDelay = _restartDelay;
     }
 }

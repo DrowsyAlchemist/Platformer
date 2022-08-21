@@ -58,17 +58,5 @@ public class EnemyAnimator : MonoBehaviour
         _animator.SetBool(WalkAnimation, false);
         _animator.SetBool(DizzyAnimation, false);
         _animator.SetBool(WinAnimation, false);
-
-
-
-
-
-
-
-
-
-
-
-
     }
 }

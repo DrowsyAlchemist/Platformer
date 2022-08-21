@@ -1,33 +1,30 @@
-using System.Collections;
 using UnityEngine;
 using UnityEngine.Events;
 
 [RequireComponent(typeof(Collider2D))]
-[RequireComponent(typeof(Animator))]
 public class Fruit : MonoBehaviour
 {
+    [SerializeField] private float _destroyDelay = 1;
     [SerializeField] private UnityEvent _isCollected;
-
-    private const string CollectedAnimation = "Collected";
-    private Animator _animator;
 
     private void Start()
     {
-        _animator = GetComponent<Animator>();
-        GetComponent<Collider2D>().isTrigger = true;
+        if (GetComponent<Collider2D>().isTrigger == false)
+            throw new System.Exception("Collider should be trigger.");
     }
 
     private void OnTriggerEnter2D(Collider2D collision)
     {
         if (collision.gameObject.TryGetComponent(out Player _))
         {
-            _animator.SetTrigger(CollectedAnimation);
-            Destroy(gameObject, _animator.GetCurrentAnimatorStateInfo(0).length);
+            _isCollected.Invoke();
+            Destroy(gameObject, _destroyDelay);
         }
     }
 
-    private void OnDestroy()
+    private void OnValidate()
     {
-        _isCollected.Invoke();
+        if (_destroyDelay < 0)
+            _destroyDelay *= -1;
     }
 }
