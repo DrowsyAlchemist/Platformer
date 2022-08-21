@@ -3,13 +3,11 @@ using UnityEngine;
 
 public class Boss : Enemy
 {
-    [SerializeField] float _walkingSpeed = 2;
+    [SerializeField] private float _walkingSpeed = 2;
 
-    public void WakeUp()
+    public void ChasePlayer(Player player)
     {
-        Player player = FindObjectOfType<Player>();
-
-        if (player.IsAlive)
+        if (player.IsAlive && IsDizzy == false)
             StartCoroutine(MoveToPlayer(player));
     }
 

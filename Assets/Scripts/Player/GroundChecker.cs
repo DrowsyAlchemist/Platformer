@@ -3,7 +3,7 @@ using UnityEngine;
 [RequireComponent(typeof(Collider2D))]
 public class GroundChecker : MonoBehaviour
 {
-    [SerializeField] LayerMask _groundLayer;
+    [SerializeField] private LayerMask _groundLayer;
 
     private Collider2D _collider;
 
@@ -12,9 +12,6 @@ public class GroundChecker : MonoBehaviour
     private void Start()
     {
         _collider = GetComponent<Collider2D>();
-
-        if (_collider.isTrigger == false)
-            throw new System.Exception("Collider should be trigger.");
     }
 
     private void OnTriggerEnter2D(Collider2D collision)
@@ -30,5 +27,11 @@ public class GroundChecker : MonoBehaviour
 
         if ((_groundLayer & (1 << collision.gameObject.layer)) > 0)
             IsOnGround = false;
+    }
+
+    private void OnValidate()
+    {
+        if (GetComponent<Collider2D>().isTrigger == false)
+            GetComponent<Collider2D>().isTrigger = true;
     }
 }

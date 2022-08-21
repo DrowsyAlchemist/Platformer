@@ -47,14 +47,8 @@ public class Enemy : MonoBehaviour, IRestartable
     private void OnPlayerWin()
     {
         _patrolling.StopPatrol();
-        StartCoroutine(DieAndDestroy());
-    }
-
-    private IEnumerator DieAndDestroy()
-    {
         EnemyAnimator.PlayDie();
-        yield return new WaitForSeconds(DestroyDelay);
-        Destroy(gameObject);
+        Destroy(gameObject, DestroyDelay);
     }
 
     private void OnDestroy()
