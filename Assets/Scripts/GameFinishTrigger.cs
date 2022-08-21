@@ -52,8 +52,6 @@ public class GameFinishTrigger : MonoBehaviour
         foreach (var gameObject in gameObjects)
             if (gameObject.TryGetComponent(out IRestartable restartable))
                 restartable.Restart();
-
-        var restartable = FindObjectsOfType<IRestartable>();
     }
 
     private void OnValidate()
