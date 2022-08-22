@@ -19,7 +19,8 @@ public class PlayerMovement : MonoBehaviour
     public void Move()
     {
         if (Input.GetKeyDown(KeyCode.Space))
-            _jumper.Jump();
+            if (_groundChecker.IsOnGround)
+                _jumper.Jump();
 
         if (Input.GetKey(KeyCode.D))
             MoveAlongXAxis();
